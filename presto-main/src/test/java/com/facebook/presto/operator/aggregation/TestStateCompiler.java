@@ -21,7 +21,6 @@ import com.facebook.presto.array.IntBigArray;
 import com.facebook.presto.array.LongBigArray;
 import com.facebook.presto.array.ReferenceCountMap;
 import com.facebook.presto.array.SliceBigArray;
-import com.facebook.presto.bytecode.DynamicClassLoader;
 import com.facebook.presto.operator.aggregation.state.LongState;
 import com.facebook.presto.operator.aggregation.state.NullableLongState;
 import com.facebook.presto.operator.aggregation.state.StateCompiler;
@@ -39,6 +38,7 @@ import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.util.Reflection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.airlift.bytecode.DynamicClassLoader;
 import io.airlift.slice.Slice;
 import org.openjdk.jol.info.ClassLayout;
 import org.testng.annotations.Test;
@@ -64,8 +64,6 @@ import static org.testng.Assert.assertEquals;
 
 public class TestStateCompiler
 {
-    private static final int SLICE_INSTANCE_SIZE = ClassLayout.parseClass(Slice.class).instanceSize();
-
     @Test
     public void testPrimitiveNullableLongSerialization()
     {
@@ -255,7 +253,7 @@ public class TestStateCompiler
                 field.setAccessible(true);
                 if (type == BlockBigArray.class || type == BooleanBigArray.class || type == SliceBigArray.class ||
                         type == ByteBigArray.class || type == DoubleBigArray.class || type == LongBigArray.class || type == IntBigArray.class) {
-                    MethodHandle sizeOf = Reflection.methodHandle(type, "sizeOf", null);
+                    MethodHandle sizeOf = Reflection.methodHandle(type, "sizeOf");
                     retainedSize += (long) sizeOf.invokeWithArguments(field.get(state));
                 }
             }
@@ -283,7 +281,7 @@ public class TestStateCompiler
                         continue;
                     }
                     bigArrayField.setAccessible(true);
-                    MethodHandle sizeOf = Reflection.methodHandle(bigArrayField.getType(), "sizeOf", null);
+                    MethodHandle sizeOf = Reflection.methodHandle(bigArrayField.getType(), "sizeOf");
                     overhead += (long) sizeOf.invokeWithArguments(bigArrayField.get(stateField.get(state)));
                 }
             }
